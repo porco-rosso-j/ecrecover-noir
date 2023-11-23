@@ -1,7 +1,5 @@
 use dep::std;
 
-use dep::array_helpers;
-
 struct PubKey {
     pub_x: [u8; 32],
     pub_y: [u8; 32],
@@ -31,7 +29,8 @@ impl PubKey {
     }
 
     fn from_unified(pub_key: [u8; 64]) -> PubKey {
-        let (key_x, key_y) = array_helpers::split_u8_64_unconstrained(pub_key);
+        // let (key_x, key_y) = array_helpers::split_u8_64_unconstrained(pub_key);
+         let (key_x, key_y) = split_u8_64_unconstrained(pub_key);
 
         PubKey {
             pub_x: key_x,
@@ -54,7 +53,8 @@ impl PubKey {
     }
 
     fn to_eth_address(self) -> Field {
-        let pub_key = array_helpers::u8_32_to_u8_64_unconstrained(self.pub_x, self.pub_y);
+        // let pub_key = array_helpers::u8_32_to_u8_64_unconstrained(self.pub_x, self.pub_y);
+         let pub_key = u8_32_to_u8_64_unconstrained(self.pub_x, self.pub_y);
         let hashed_pub_key = std::hash::keccak256(pub_key, 64);
 
         let mut addr: Field = 0;
@@ -87,4 +87,108 @@ fn test_ecrecover_via_key() {
 
     let key = PubKey::from_xy(pub_key_x, pub_key_y);
     assert(key.ecrecover(signature, hashed_message) == 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266);
+}
+
+fn u8_32_to_u8_64(
+    arr_a: [u8; 32],
+    arr_b: [u8; 32],
+) -> [u8; 64] {
+    let mut combined: [u8; 64] = [0; 64];
+
+    for i in 0..32 {
+        combined[i] = arr_a[i];
+    }
+    for i in 0..32 {
+        combined[i + 32] = arr_b[i];
+    }
+
+    combined
+}
+
+unconstrained
+fn u8_32_to_u8_64_unconstrained(
+    arr_a: [u8; 32],
+    arr_b: [u8; 32],
+) -> [u8; 64] {
+    let mut combined: [u8; 64] = [0; 64];
+
+    for i in 0..32 {
+        combined[i] = arr_a[i];
+    }
+    for i in 0..32 {
+        combined[i + 32] = arr_b[i];
+    }
+
+    combined
+}
+
+/// @dev this method is used to convert a u8 array to a u160 (which is not supported by Noir, so it's represented as a Field)
+/// @dev will throw on Field overflow
+fn u8_to_u160(
+    array: [u8]
+) -> Field {
+    let mut addr: Field = 0;
+
+    for i in 0..20 {
+        // only take the last 20 bytes of the hash
+        addr = (addr * 256) + (array[i] as Field);
+    }
+
+    addr
+}
+
+unconstrained
+fn u8_to_u160_unconstrained(
+    array: [u8]
+) -> Field {
+    let mut addr: Field = 0;
+
+    for i in 0..20 {
+        // only take the last 20 bytes of the hash
+        addr = (addr * 256) + (array[i] as Field);
+    }
+
+    addr
+}
+
+fn u8_to_eth_address(
+    array: [u8]
+) -> Field {
+    u8_to_u160(array)
+}
+
+unconstrained
+fn u8_to_eth_address_unconstrained(
+    array: [u8]
+) -> Field {
+    u8_to_u160(array)
+}
+
+fn split_u8_64(
+    arr: [u8; 64]
+) -> ([u8; 32], [u8; 32]) {
+    let mut arr_a: [u8; 32] = [0; 32];
+    let mut arr_b: [u8; 32] = [0; 32];
+
+    for i in 0..32 {
+        arr_a[i] = arr[i];
+        arr_b[i] = arr[i + 32];
+    };
+
+    (arr_a, arr_b)
+}
+
+unconstrained
+fn split_u8_64_unconstrained(
+    arr: [u8; 64]
+) -> ([u8; 32], [u8; 32]) {
+    let mut arr_a: [u8; 32] = [0; 32];
+    let mut arr_b: [u8; 32] = [0; 32];
+
+    for i in 0..32 {
+        arr_a[i] = arr[i];
+        arr_b[i] = arr[i + 32];
+    };
+
+    (arr_a, arr_b)
 }
